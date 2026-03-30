@@ -54,10 +54,10 @@ if [ $? -ne 0]
    echo -e "expense user already added.$Y Skipping $N"
 fi
 
-mkdir -p /app
+mkdir -p /app &>>$LOG_FILE
 VALIDATE $? "creating app folder"
 
-curl -o /tmp/backend.zip https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+curl -o /tmp/backend.zip https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip &>>$LOG_FILE
 VALIDATE $? "downloading backend application code"
 
 cd /app
@@ -65,7 +65,7 @@ rm -rf /app/* # remove the existing code
 unzip /tmp/backend.zip
 VALIDATE $? "Extracting backend application code"
 
-npm install
+npm install &>>$LOG_FILE
 VALIDATE $? "installing packages"
 
 cp /home/ec2-user/expense-shell/backend.service /etc/systemd/system/backend.service
