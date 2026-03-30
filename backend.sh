@@ -21,7 +21,7 @@ CHECK_ROOT(){
 }
 
 VALIDATE(){
-   if [ $1 -ne 0]
+   if [ $1 -ne 0 ]
      then 
       echo -e "$2 is $R FAILED $N , Please check it..." | tee -a $LOG_FILE
       exit 1
@@ -45,7 +45,7 @@ VALIDATE $? "installing nojejs"
 
 id expense &>>$LOG_FILE
 
-if [ $? -ne 0]
+if [ $? -ne 0 ]
  then
    echo -e "expense user not exist. $G Creating $N"
    useradd expense  &>>$LOG_FILE
@@ -62,7 +62,7 @@ VALIDATE $? "downloading backend application code"
 
 cd /app
 rm -rf /app/* # remove the existing code
-unzip /tmp/backend.zip
+unzip /tmp/backend.zip &>>$LOG_FILE
 VALIDATE $? "Extracting backend application code"
 
 npm install &>>$LOG_FILE
