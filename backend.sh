@@ -72,8 +72,9 @@ cp /home/ec2-user/expense-shell/backend.service /etc/systemd/system/backend.serv
 
 systemctl start backend
 VALIDATE $? "Started Backend Application"
-dnf install mysql -y
-VALIDATE $? "instaaling msql client"
+
+dnf install mysql -y &>>$LOG_FILE
+VALIDATE $? "installing msql client"
 
 mysql -h 172.31.66.140 -uroot -pExpenseApp@1 < /app/schema/backend.sql
 VALIDATE $? "Schema loading"
