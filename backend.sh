@@ -1,6 +1,6 @@
 #!bin/bash
 
-USER=$(id -u)
+USERID=$(id -u)
 
 LOGS_FOLDER=/var/log/shell-script
 SCRIPT_NAME=$(echo $0 | cut -d "." -f1)
@@ -12,11 +12,13 @@ R="\e[31m"
 G="\e[32m"
 N="\e[0m"
 
-if [ $USER -ne 0 ]
-  then
-    echo "Please run this script with root priveleges"
-    exit 1
-fi
+CHECK_ROOT(){
+    if [ $USERID -ne 0 ]
+    then
+        echo -e "$R Please run this script with root priveleges $N" | tee -a $LOG_FILE
+        exit 1
+    fi
+}
 
 VALIDATE(){
    if [ $1 -ne 0]
@@ -28,6 +30,10 @@ VALIDATE(){
     fi
 }
 
+echo "Script started executing at: $(date)" | tee -a $LOG_FILE
+
+CHECK_ROOT
+
 dnf module disable nodejs -y &>>$LOG_FILE
 VALIDATE $? "disabling nodejs version"
 
@@ -37,6 +43,46 @@ VALIDATE $? "enabling nodejs:20 version"
 dnf install nodejs -y &>>$LOG_FILE
 VALIDATE $? "installing nojejs"
 
-USER=$()
-useradd expense
-VALIDATE $? "adding user"
+id expense &>>$LOG_FILE
+
+if [ $? -ne 0]
+ then
+   echo -e "expense user not exist. $G Creating $N"
+   useradd expense  &>>$LOG_FILE
+   VALIDATE $? "adding expense user"
+ else
+   echo -e "expense user already added.$Y Skipping $N"
+fi
+
+mkdir -p /app
+VALIDATE $? "creating app folder"
+
+curl -o /tmp/backend.zip https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+VALIDATE $? "downloading backend application code"
+
+cd /app
+rm -rf /app/* # remove the existing code
+unzip /tmp/backend.zip
+VALIDATE $? "Extracting backend application code"
+
+npm install
+VALIDATE $? "installing packages"
+
+cp /home/ec2-user/expense-shell/backend.service /etc/systemd/system/backend.service
+
+systemctl start backend
+VALIDATE $? "Started Backend Application"
+dnf install mysql -y
+VALIDATE $? "instaaling msql client"
+
+mysql -h 172.31.66.140 -uroot -pExpenseApp@1 < /app/schema/backend.sql
+VALIDATE $? "Schema loading"
+
+systemctl daemon-reload &>>$LOG_FILE
+VALIDATE $? "Daemon reload"
+
+systemctl enable backend &>>$LOG_FILE
+VALIDATE $? "Enabled backend"
+
+systemctl restart backend &>>$LOG_FILE
+VALIDATE $? "Restarted Backend Application"
